@@ -34,7 +34,7 @@ def _set_refresh_cookie(response: Response, raw_token: str) -> None:
         key=REFRESH_COOKIE_NAME,
         value=raw_token,
         httponly=True,
-        secure=settings.COOKIE_SECURE if not settings.DEBUG else False,
+        secure=settings.COOKIE_SECURE,
         samesite=settings.COOKIE_SAMESITE,
         max_age=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS * 86400,
         path="/api/v1/auth",
@@ -48,7 +48,7 @@ def _clear_refresh_cookie(response: Response) -> None:
         path="/api/v1/auth",
         httponly=True,
         samesite=settings.COOKIE_SAMESITE,
-        secure=settings.COOKIE_SECURE if not settings.DEBUG else False,
+        secure=settings.COOKIE_SECURE,
     )
 
 

@@ -1144,7 +1144,7 @@ export const api = {
       let isClosed = false;
       const token = getStoredAccessToken();
       const q = token ? `?token=${encodeURIComponent(token)}` : "";
-      const url = `${API_BASE_URL}/api/v1/jobs/${jobId}/stream${q}`;
+      const url = `${getApiBaseUrl()}/api/v1/jobs/${jobId}/stream${q}`;
       const eventSource = new EventSource(url, { withCredentials: true });
 
       // Durable State Initial Sync: Query current job state immediately in case it completed before EventSource opened

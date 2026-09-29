@@ -1,0 +1,135 @@
+# ==============================================================================
+# HeyZen Autonomous AI Video Studio — Render Blueprint Specification
+# Temporary Showcase Deployment Configuration (FastAPI Web Service + Celery Worker)
+# ==============================================================================
+services:
+  # ----------------------------------------------------------------------------
+  # 1. FastAPI REST & Real-time SSE Web Service
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: heyzen-backend
+    runtime: python
+    plan: standard
+    region: oregon
+    rootDir: backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2 --proxy-headers --forwarded-allow-ips "*"
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: APP_ENV
+        value: production
+      - key: APP_NAME
+        value: HeyZen Backend
+      - key: DEBUG
+        value: "false"
+
+      # Database (PostgreSQL — use connection string from Render Postgres or external provider)
+      - key: DATABASE_URL
+        sync: false
+
+      # Redis (Queue & Cache — use connection string from Render Redis or external provider)
+      - key: REDIS_URL
+        sync: false
+
+      # Object Storage (MinIO / S3)
+      - key: MINIO_ENDPOINT
+        sync: false
+      - key: MINIO_ACCESS_KEY
+        sync: false
+      - key: MINIO_SECRET_KEY
+        sync: false
+      - key: MINIO_BUCKET
+        value: heyzen-assets
+      - key: MINIO_REGION
+        value: us-east-1
+
+      # Authentication & Security
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "15"
+      - key: JWT_REFRESH_TOKEN_EXPIRE_DAYS
+        value: "7"
+
+      # Cross-Origin (Vercel Frontend)
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        value: "http://localhost:3000,http://127.0.0.1:3000"
+
+      # Cross-Site Cookie Policy for Vercel -> Render HTTPS communication
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAMESITE
+        value: none
+
+      # AI Defaults (CPU / Mock fallback for public showcase without GPU host)
+      - key: AI_PROVIDER_MODE
+        value: mock
+      - key: AI_RUNTIME_MODE
+        value: mock
+      - key: DEFAULT_AVATAR_PROVIDER
+        value: gpu_avatar
+
+  # ----------------------------------------------------------------------------
+  # 2. Celery Asynchronous Media & Pipeline Worker
+  # ----------------------------------------------------------------------------
+  - type: worker
+    name: heyzen-celery-worker
+    runtime: python
+    plan: standard
+    region: oregon
+    rootDir: backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: celery -A app.workers.celery_app.celery_app worker -Q cpu_media,maintenance -c 4 --loglevel=INFO -n cpu_worker@%h
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: APP_ENV
+        value: production
+      - key: APP_NAME
+        value: HeyZen Backend
+      - key: DEBUG
+        value: "false"
+
+      # Database & Redis (Shared with Web Service)
+      - key: DATABASE_URL
+        fromService:
+          name: heyzen-backend
+          type: web
+          envVarKey: DATABASE_URL
+      - key: REDIS_URL
+        fromService:
+          name: heyzen-backend
+          type: web
+          envVarKey: REDIS_URL
+
+      # Storage (Shared with Web Service)
+      - key: MINIO_ENDPOINT
+        fromService:
+          name: heyzen-backend
+          type: web
+          envVarKey: MINIO_ENDPOINT
+      - key: MINIO_ACCESS_KEY
+        fromService:
+          name: heyzen-backend
+          type: web
+          envVarKey: MINIO_ACCESS_KEY
+      - key: MINIO_SECRET_KEY
+        fromService:
+          name: heyzen-backend
+          type: web
+          envVarKey: MINIO_SECRET_KEY
+      - key: MINIO_BUCKET
+        value: heyzen-assets
+
+      # Security (Shared JWT Key)
+      - key: JWT_SECRET_KEY
+        fromService:
+          name: heyzen-backend
+          type: web
+          envVarKey: JWT_SECRET_KEY
