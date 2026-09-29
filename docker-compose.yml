@@ -1,0 +1,71 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: heyzen-postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-heyzen}
+      POSTGRES_USER: ${POSTGRES_USER:-heyzen}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-heyzen_dev_password}
+    volumes:
+      - heyzen_postgres_data:/var/lib/postgresql/data
+    networks:
+      - heyzen-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-heyzen} -d ${POSTGRES_DB:-heyzen}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: heyzen-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - heyzen_redis_data:/data
+    networks:
+      - heyzen-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: heyzen-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-heyzen_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-heyzen_dev_password123}
+    volumes:
+      - heyzen_minio_data:/data
+    networks:
+      - heyzen-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:9000/minio/health/live || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  heyzen_postgres_data:
+    name: heyzen_postgres_data
+  heyzen_redis_data:
+    name: heyzen_redis_data
+  heyzen_minio_data:
+    name: heyzen_minio_data
+
+networks:
+  heyzen-network:
+    name: heyzen-network
+

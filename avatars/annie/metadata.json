@@ -1,0 +1,42 @@
+{
+  "avatar_id": "annie_studio",
+  "display_name": "Annie - Studio Presenter",
+  "gender": "female",
+  "framing": "half_body",
+  "aspect_ratio": "1:1",
+  "resolutions": {
+    "source": [
+      1024,
+      1024
+    ],
+    "medium": [
+      512,
+      512
+    ],
+    "native": [
+      1024,
+      1024
+    ]
+  },
+  "lighting": "Studio three-point key/fill/rim lighting",
+  "camera_angle": "direct_eye_level",
+  "expression": "neutral_approachable",
+  "license": "HeyZen Project Asset (Royalty-free internal preset)",
+  "commercial_use_approved": true,
+  "driving_templates": [
+    {
+      "id": "neutral",
+      "file": "driving/neutral.mp4",
+      "description": "Natural conversational idle posture with micro gaze shifts and subtle head motion",
+      "fps": 25,
+      "duration_seconds": 10.0
+    },
+    {
+      "id": "talking",
+      "file": "driving/talking.mp4",
+      "description": "Engaged presenter delivery driving motion with natural head tilt, jaw motion, and shoulder posture",
+      "fps": 25,
+      "duration_seconds": 10.0
+    }
+  ]
+}

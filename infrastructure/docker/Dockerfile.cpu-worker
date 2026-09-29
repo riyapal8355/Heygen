@@ -1,0 +1,55 @@
+# ==============================================================================
+# HeyZen Autonomous AI Video Studio — Production CPU Celery Worker
+# Handles `cpu_media` and `maintenance` queues (FFmpeg, Piper TTS, Silero VAD, MediaPipe)
+# ==============================================================================
+FROM python:3.11-slim-bookworm
+
+LABEL maintainer="HeyZen Engineering <engineering@heyzen.ai>"
+LABEL description="HeyZen Production CPU Celery Worker"
+
+# 1. Environment Configuration
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app \
+    PATH="/home/heyzen/.local/bin:${PATH}" \
+    AI_MODEL_CACHE_DIR=/app/models_cache \
+    AI_ALLOW_AUTO_DOWNLOAD=false \
+    AI_VERIFY_CHECKSUMS=true
+
+# 2. System Packages & Media Binaries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. Create Unprivileged User (UID 10001)
+RUN groupadd -g 10001 heyzen && \
+    useradd -u 10001 -g heyzen -m -s /bin/bash heyzen
+
+WORKDIR /app
+RUN mkdir -p /app/models_cache && chown -R heyzen:heyzen /app
+
+# 4. Install Dependencies
+COPY --chown=heyzen:heyzen requirements.txt /app/
+RUN python3 -m pip install --no-cache-dir --upgrade pip && \
+    python3 -m pip install --no-cache-dir -r requirements.txt
+
+# 5. Copy Application Source Code
+COPY --chown=heyzen:heyzen app /app/app
+COPY --chown=heyzen:heyzen scripts /app/scripts
+COPY --chown=heyzen:heyzen alembic.ini /app/alembic.ini
+
+USER heyzen
+
+# 6. Celery Liveness Check via Ping
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=15s \
+    CMD python3 -m celery -A app.workers.celery_app.celery_app inspect ping -d "celery@cpu_worker" || exit 1
+
+# 7. Start Celery CPU Worker consuming cpu_media and maintenance queues
+CMD ["celery", "-A", "app.workers.celery_app.celery_app", "worker", "-Q", "cpu_media,maintenance", "-c", "4", "--loglevel=INFO", "-n", "cpu_worker@%h"]

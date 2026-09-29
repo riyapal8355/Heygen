@@ -1,0 +1,79 @@
+# ==============================================================================
+# HeyZen Autonomous AI Video Studio — Production GPU Worker Container
+# Phase 9: NVIDIA CUDA 12.4 Dedicated AI Inference Worker (`gpu_ai`)
+# ==============================================================================
+# Base: Official NVIDIA CUDA 12.4.1 Runtime on Ubuntu 22.04 LTS
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+
+LABEL maintainer="HeyZen Engineering <engineering@heyzen.ai>"
+LABEL description="HeyZen Production NVIDIA GPU Worker for MuseTalk and Stable Diffusion inference"
+LABEL org.opencontainers.image.source="https://github.com/heyzen/video-ai-tools"
+
+# 1. Environment & Non-Interactive Configuration
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app \
+    PATH="/home/heyzen/.local/bin:${PATH}" \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    AI_MODEL_CACHE_DIR=/app/models_cache \
+    AI_ALLOW_AUTO_DOWNLOAD=false \
+    AI_VERIFY_CHECKSUMS=true
+
+# 2. System Packages, Deterministic Python 3.11, and Media Libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    ca-certificates \
+    curl \
+    gnupg \
+    git \
+    && add-apt-repository ppa:deadsnakes/ppa -y \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-venv \
+    python3.11-dev \
+    python3.11-distutils \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    libgl1 \
+    libglib2.0-0 \
+    libgomp1 \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 \
+    && apt-get purge -y software-properties-common \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. Create Unprivileged heyzen User & Group (UID 10001)
+RUN groupadd -g 10001 heyzen && \
+    useradd -u 10001 -g heyzen -m -s /bin/bash heyzen
+
+# 4. Workdir and Model Cache Directory
+WORKDIR /app
+RUN mkdir -p /app/models_cache && chown -R heyzen:heyzen /app
+
+# 5. Install Python GPU Dependencies
+COPY --chown=heyzen:heyzen requirements.txt requirements-gpu.txt /app/
+RUN python3.11 -m pip install --no-cache-dir --upgrade pip && \
+    python3.11 -m pip install --no-cache-dir -r requirements-gpu.txt
+
+# 6. Copy Application Source Code
+COPY --chown=heyzen:heyzen app /app/app
+COPY --chown=heyzen:heyzen scripts /app/scripts
+COPY --chown=heyzen:heyzen alembic.ini /app/alembic.ini
+
+# Make supervisor script executable
+RUN chmod +x /app/scripts/gpu_worker_entrypoint.py /app/scripts/provision_gpu_models.py
+
+# 7. Run as Unprivileged User
+USER heyzen
+
+# 8. Container Healthcheck (Verifies worker process and admission)
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD python3.11 -c "import torch; assert torch.cuda.is_available()" || exit 1
+
+# 9. Entrypoint Supervisor & Default Command
+# Entrypoint verifies CUDA admission, VRAM >= 8GB, and model manifest before starting Celery
+ENTRYPOINT ["python3.11", "/app/scripts/gpu_worker_entrypoint.py"]
+CMD ["celery", "-A", "app.workers.celery_app.celery_app", "worker", "-Q", "gpu_ai", "-c", "1", "--max-tasks-per-child=50", "--loglevel=INFO", "-n", "gpu_worker@%h"]

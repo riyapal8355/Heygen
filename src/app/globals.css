@@ -1,0 +1,706 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #080a11;
+    --card-bg: #0e1220;
+    --card-border: #1a2238;
+    --card-hover: #151b2e;
+    --foreground: #f1f5f9;
+    --primary: #3b82f6;
+    --primary-glow: rgba(59, 130, 246, 0.35);
+    --accent-purple: #8b5cf6;
+    --accent-teal: #10b981;
+  }
+
+  html.light,
+  html[data-theme="light"] {
+    --background: #f8fafc;
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;
+    --card-hover: #f1f5f9;
+    --foreground: #0f172a;
+    --primary: #2563eb;
+    --primary-glow: rgba(37, 99, 235, 0.25);
+  }
+
+  body {
+    background-color: #07090e;
+    color: #f1f5f9;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* ==========================================================================
+   TOTAL LIGHT THEME OVERRIDES (Comprehensive Coverage - 100% Crisp Light Mode)
+   ========================================================================== */
+
+html.light,
+html[data-theme="light"] {
+  color-scheme: light !important;
+}
+
+html.light body,
+html[data-theme="light"] body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* 1. APP WORKSPACE & SHELL BACKGROUNDS */
+html.light main,
+html.light [class*="bg-[#05070c]"],
+html.light [class*="bg-[#06080d]"],
+html.light [class*="bg-[#06080e]"],
+html.light [class*="bg-[#07090e]"],
+html.light [class*="bg-[#07090f]"],
+html.light [class*="bg-[#070a12]"],
+html.light [class*="bg-[#070b14]"],
+html.light [class*="bg-[#080a11]"],
+html.light [class*="bg-[#080b12]"],
+html.light [class*="bg-[#080b14]"],
+html.light [class*="bg-[#080c14]"],
+html.light [class*="bg-[#080c16]"],
+html.light [class*="bg-[#090c15]"],
+html.light [class*="bg-[#090d16]"],
+html.light [class*="bg-[#090d17]"],
+html.light [class*="bg-[#090d18]"],
+html.light [class*="bg-[#0a0d16]"],
+html.light [class*="bg-[#0a0e17]"],
+html.light [class*="bg-[#0a0e19]"],
+html.light [class*="bg-[#0a0e1a]"],
+html.light [class*="bg-[#0a0f1a]"],
+html.light [class*="bg-[#0b0e18]"],
+html.light [class*="bg-[#0b0f19]"],
+html.light [class*="bg-[#0b0f1a]"],
+html.light [class*="bg-[#000000]"] {
+  background-color: #f8fafc !important;
+}
+
+/* 2. PRIMARY & SECONDARY SIDEBARS & HEADERS */
+html.light aside,
+html.light header,
+html.light [class*="w-16"][class*="h-screen"],
+html.light [class*="w-56"][class*="h-screen"],
+html.light [class*="w-60"][class*="h-screen"],
+html.light [class*="w-64"][class*="h-screen"],
+html.light #studio-left-sidebar,
+html.light #studio-right-inspector {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Sidebar Titles & Text */
+html.light aside span,
+html.light aside h1,
+html.light aside h2,
+html.light aside h3,
+html.light [class*="h-screen"] > div > div > span,
+html.light header span,
+html.light header h1,
+html.light header h2 {
+  color: #0f172a !important;
+}
+
+/* Left Rail Logo */
+html.light [class*="w-16"] [class*="bg-[#0b0f19]"] {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Inactive Sidebar nav buttons */
+html.light aside button,
+html.light [class*="h-screen"] button {
+  color: #475569 !important;
+}
+
+html.light aside button:hover,
+html.light [class*="h-screen"] button:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Active Sidebar Navigation Pill */
+html.light aside button[class*="bg-[#151f36]"],
+html.light aside button[class*="bg-[#121927]"],
+html.light aside button[class*="bg-[#18233c]"],
+html.light aside div[class*="bg-[#151f36]"],
+html.light [class*="h-screen"] button[class*="bg-[#151f36]"],
+html.light [class*="h-screen"] button[class*="bg-[#18233c]"],
+html.light [class*="h-screen"] button[class*="bg-[#121927]"],
+html.light [class*="w-16"] button[class*="bg-[#162035]"] {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
+  border-color: #bfdbfe !important;
+  font-weight: 700 !important;
+}
+
+html.light aside button[class*="bg-[#151f36]"] svg,
+html.light [class*="h-screen"] button[class*="bg-[#151f36]"] svg,
+html.light aside div[class*="bg-[#151f36]"] svg,
+html.light [class*="w-16"] button[class*="bg-[#162035]"] svg {
+  color: #2563eb !important;
+}
+
+html.light aside button[class*="bg-[#151f36]"] span,
+html.light [class*="h-screen"] button[class*="bg-[#151f36]"] span,
+html.light aside div[class*="bg-[#151f36]"] span {
+  color: #2563eb !important;
+}
+
+/* Left rail credit diamond & user button */
+html.light [class*="bg-[#1b253b]"],
+html.light [class*="bg-[#121827]"] {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+/* 3. CARDS, PANELS, MODALS, CONTAINERS & DIALOGS */
+html.light [class*="bg-[#0b101c]"],
+html.light [class*="bg-[#0b101d]"],
+html.light [class*="bg-[#0b111e]"],
+html.light [class*="bg-[#0b1220]"],
+html.light [class*="bg-[#0c101d]"],
+html.light [class*="bg-[#0c111e]"],
+html.light [class*="bg-[#0c111f]"],
+html.light [class*="bg-[#0c1220]"],
+html.light [class*="bg-[#0d121f]"],
+html.light [class*="bg-[#0d1220]"],
+html.light [class*="bg-[#0d1222]"],
+html.light [class*="bg-[#0d1322]"],
+html.light [class*="bg-[#0d1424]"],
+html.light [class*="bg-[#0e1220]"],
+html.light [class*="bg-[#0e1322]"],
+html.light [class*="bg-[#0e1422]"],
+html.light [class*="bg-[#0e1423]"],
+html.light [class*="bg-[#0e1424]"],
+html.light [class*="bg-[#0e1626]"],
+html.light [class*="bg-[#0f1424]"],
+html.light [class*="bg-[#0f1523]"],
+html.light [class*="bg-[#0f1525]"],
+html.light [class*="bg-[#0f1626]"],
+html.light [class*="bg-[#0f1627]"],
+html.light [class*="bg-[#0f1628]"],
+html.light [class*="bg-[#0f172a]"],
+html.light [class*="bg-[#101625]"],
+html.light [class*="bg-[#101626]"],
+html.light [class*="bg-[#101628]"],
+html.light [class*="bg-[#101726]"],
+html.light [class*="bg-[#101827]"],
+html.light [class*="bg-[#101828]"],
+html.light [class*="bg-[#111726]"],
+html.light [class*="bg-[#111728]"],
+html.light [class*="bg-[#111a2f]"],
+html.light [class*="bg-[#12161f]"],
+html.light [class*="bg-[#121824]"],
+html.light [class*="bg-[#121827]"],
+html.light [class*="bg-[#121828]"],
+html.light [class*="bg-[#121829]"],
+html.light [class*="bg-[#121929]"],
+html.light [class*="bg-[#12192c]"],
+html.light [class*="bg-[#121a2d]"],
+html.light [class*="bg-[#121b2d]"],
+html.light [class*="bg-[#161c2c]"],
+html.light [class*="bg-[#181d2a]"],
+html.light [class*="bg-[#131722]"],
+html.light [class*="bg-slate-900"],
+html.light [class*="bg-slate-950"],
+html.light [class*="bg-gray-900"],
+html.light [class*="bg-gray-950"],
+html.light [class*="bg-zinc-900"],
+html.light [class*="bg-zinc-950"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* 4. SUB-PANELS, SECONDARY CONTAINERS, CHIPS & ROWS */
+html.light [class*="bg-[#131929]"],
+html.light [class*="bg-[#131a2c]"],
+html.light [class*="bg-[#131b2e]"],
+html.light [class*="bg-[#141b2c]"],
+html.light [class*="bg-[#141b2e]"],
+html.light [class*="bg-[#141c2e]"],
+html.light [class*="bg-[#141c30]"],
+html.light [class*="bg-[#141d30]"],
+html.light [class*="bg-[#141d31]"],
+html.light [class*="bg-[#141d33]"],
+html.light [class*="bg-[#141e33]"],
+html.light [class*="bg-[#141f33]"],
+html.light [class*="bg-[#151c2d]"],
+html.light [class*="bg-[#151c2e]"],
+html.light [class*="bg-[#151d2f]"],
+html.light [class*="bg-[#151d30]"],
+html.light [class*="bg-[#151d32]"],
+html.light [class*="bg-[#151e33]"],
+html.light [class*="bg-[#151f33]"],
+html.light [class*="bg-[#151f36]"]:not(aside button),
+html.light [class*="bg-[#152033]"],
+html.light [class*="bg-[#152035]"],
+html.light [class*="bg-[#152038]"],
+html.light [class*="bg-[#152138]"],
+html.light [class*="bg-[#161f33]"],
+html.light [class*="bg-[#161f36]"],
+html.light [class*="bg-[#162035]"]:not(aside button),
+html.light [class*="bg-[#162238]"],
+html.light [class*="bg-[#16233b]"],
+html.light [class*="bg-[#17181c]"],
+html.light [class*="bg-[#172033]"],
+html.light [class*="bg-[#172036]"],
+html.light [class*="bg-[#172238]"],
+html.light [class*="bg-[#172848]"],
+html.light [class*="bg-[#182138]"],
+html.light [class*="bg-[#182236]"],
+html.light [class*="bg-[#182238]"],
+html.light [class*="bg-[#18233a]"],
+html.light [class*="bg-[#18233b]"],
+html.light [class*="bg-[#18233c]"],
+html.light [class*="bg-[#18233d]"],
+html.light [class*="bg-[#18243b]"],
+html.light [class*="bg-[#18243c]"],
+html.light [class*="bg-[#192238]"],
+html.light [class*="bg-[#19233b]"],
+html.light [class*="bg-[#19243d]"],
+html.light [class*="bg-[#1a2130]"],
+html.light [class*="bg-[#1a2236]"],
+html.light [class*="bg-[#1a233a]"],
+html.light [class*="bg-[#1a243a]"],
+html.light [class*="bg-[#1a243c]"],
+html.light [class*="bg-[#1a253c]"],
+html.light [class*="bg-[#1a253e]"],
+html.light [class*="bg-[#1a253f]"],
+html.light [class*="bg-[#1a2640]"],
+html.light [class*="bg-[#1a2642]"],
+html.light [class*="bg-[#1b2940]"],
+html.light [class*="bg-[#1c263e]"],
+html.light [class*="bg-[#1c2740]"],
+html.light [class*="bg-[#1c2742]"],
+html.light [class*="bg-[#1c2842]"],
+html.light [class*="bg-[#1d2945]"],
+html.light [class*="bg-[#1d2b4a]"],
+html.light [class*="bg-[#1e293b]"],
+html.light [class*="bg-[#1e2a44]"],
+html.light [class*="bg-[#1e2b47]"],
+html.light [class*="bg-[#1e2c47]"],
+html.light [class*="bg-[#1e2c48]"],
+html.light [class*="bg-[#1e2c49]"],
+html.light [class*="bg-[#1e2c4a]"],
+html.light [class*="bg-[#1e2c4c]"],
+html.light [class*="bg-[#1e2d4a]"],
+html.light [class*="bg-[#1e2d4d]"],
+html.light [class*="bg-[#1f2a43]"],
+html.light [class*="bg-[#1f2a44]"],
+html.light [class*="bg-[#1f2b45]"],
+html.light [class*="bg-[#1f2b48]"],
+html.light [class*="bg-[#1f2c49]"],
+html.light [class*="bg-[#1f2c4a]"],
+html.light [class*="bg-[#1f2c4c]"],
+html.light [class*="bg-[#1f2d48]"],
+html.light [class*="bg-[#1f2d4a]"],
+html.light [class*="bg-[#1f3152]"],
+html.light [class*="bg-[#20293d]"],
+html.light [class*="bg-[#202c47]"],
+html.light [class*="bg-[#202c49]"],
+html.light [class*="bg-[#202e4c]"],
+html.light [class*="bg-[#202e4f]"],
+html.light [class*="bg-[#203660]"],
+html.light [class*="bg-[#212e48]"],
+html.light [class*="bg-[#212e4c]"],
+html.light [class*="bg-[#222d42]"],
+html.light [class*="bg-[#222f4c]"],
+html.light [class*="bg-[#222f4d]"],
+html.light [class*="bg-[#22304d]"],
+html.light [class*="bg-[#22304f]"],
+html.light [class*="bg-[#223050]"],
+html.light [class*="bg-[#223152]"],
+html.light [class*="bg-[#223352]"],
+html.light [class*="bg-[#223354]"],
+html.light [class*="bg-[#23304e]"],
+html.light [class*="bg-[#233152]"],
+html.light [class*="bg-[#233355]"],
+html.light [class*="bg-[#233554]"],
+html.light [class*="bg-[#24324f]"],
+html.light [class*="bg-[#243354]"],
+html.light [class*="bg-[#243456]"],
+html.light [class*="bg-[#25324e]"],
+html.light [class*="bg-[#253350]"],
+html.light [class*="bg-[#253457]"],
+html.light [class*="bg-[#253554]"],
+html.light [class*="bg-[#263554]"],
+html.light [class*="bg-[#26375c]"],
+html.light [class*="bg-slate-800"],
+html.light [class*="bg-gray-800"],
+html.light [class*="bg-zinc-800"] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* 5. STUDIO TIMELINE, PANELS & HANDLES */
+html.light #studio-bottom-timeline {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light #studio-bottom-timeline > div {
+  border-color: #e2e8f0 !important;
+}
+
+html.light #resize-handle-left-sidebar,
+html.light #resize-handle-right-inspector,
+html.light #resize-handle-timeline {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* 6. ALL BORDERS, DIVIDERS & RINGS */
+html.light [class*="border-[#"],
+html.light [class*="border-slate-800"],
+html.light [class*="border-slate-700"],
+html.light [class*="border-slate-600"],
+html.light [class*="border-white/"] {
+  border-color: #e2e8f0 !important;
+}
+
+html.light [class*="divide-[#"],
+html.light [class*="divide-white/"],
+html.light .divide-y > * {
+  border-color: #e2e8f0 !important;
+}
+
+/* 7. HIGH-CONTRAST TYPOGRAPHY */
+html.light .text-white,
+html.light [class*="text-slate-100"],
+html.light [class*="text-slate-200"],
+html.light h1,
+html.light h2,
+html.light h3,
+html.light h4,
+html.light h5,
+html.light h6 {
+  color: #0f172a !important;
+}
+
+html.light [class*="text-slate-300"],
+html.light [class*="text-slate-400"] {
+  color: #334155 !important;
+}
+
+html.light [class*="text-slate-500"] {
+  color: #64748b !important;
+}
+
+/* Accent texts in Light Mode */
+html.light .text-cyan-400,
+html.light .text-cyan-300,
+html.light .text-sky-400 {
+  color: #0284c7 !important;
+}
+
+html.light .text-purple-400,
+html.light .text-purple-300 {
+  color: #7c3aed !important;
+}
+
+html.light .text-emerald-400,
+html.light .text-emerald-300 {
+  color: #059669 !important;
+}
+
+html.light .text-amber-400,
+html.light .text-amber-300 {
+  color: #b45309 !important;
+}
+
+html.light .text-rose-400,
+html.light .text-rose-300 {
+  color: #e11d48 !important;
+}
+
+/* 8. BADGES, CHIPS & STATUS TAGS */
+html.light [class*="bg-cyan-500/10"],
+html.light [class*="bg-cyan-500/15"],
+html.light [class*="bg-cyan-500/20"] {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #bae6fd !important;
+}
+
+html.light [class*="bg-purple-500/10"],
+html.light [class*="bg-purple-500/15"],
+html.light [class*="bg-purple-500/20"],
+html.light [class*="bg-purple-900/40"] {
+  background-color: #f3e8ff !important;
+  color: #6b21a8 !important;
+  border-color: #e9d5ff !important;
+}
+
+html.light [class*="bg-emerald-500/10"],
+html.light [class*="bg-emerald-500/15"],
+html.light [class*="bg-emerald-500/20"] {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+  border-color: #a7f3d0 !important;
+}
+
+html.light [class*="bg-amber-500/10"],
+html.light [class*="bg-amber-500/15"],
+html.light [class*="bg-amber-500/20"] {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #fde68a !important;
+}
+
+html.light [class*="bg-rose-500/10"],
+html.light [class*="bg-rose-500/15"],
+html.light [class*="bg-rose-500/20"] {
+  background-color: #ffe4e6 !important;
+  color: #9f1239 !important;
+  border-color: #fecdd3 !important;
+}
+
+/* 9. BUTTONS (Crisp High-Contrast in Light Theme) */
+html.light button[class*="bg-gradient-"],
+html.light button[class*="bg-blue-"],
+html.light button[class*="bg-emerald-"],
+html.light button[class*="bg-indigo-"],
+html.light button[class*="bg-purple-"],
+html.light button[class*="bg-rose-"],
+html.light button[class*="bg-red-"],
+html.light a[class*="bg-gradient-"],
+html.light a[class*="bg-blue-"],
+html.light a[class*="bg-emerald-"],
+html.light a[class*="bg-indigo-"] {
+  color: #ffffff !important;
+}
+
+html.light button[class*="bg-gradient-"] *,
+html.light button[class*="bg-blue-"] *,
+html.light button[class*="bg-emerald-"] *,
+html.light button[class*="bg-indigo-"] *,
+html.light button[class*="bg-purple-"] *,
+html.light button[class*="bg-rose-"] *,
+html.light button[class*="bg-red-"] *,
+html.light a[class*="bg-gradient-"] *,
+html.light a[class*="bg-blue-"] *,
+html.light a[class*="bg-emerald-"] *,
+html.light a[class*="bg-indigo-"] * {
+  color: #ffffff !important;
+}
+
+html.light button[class*="bg-[#121828]"],
+html.light button[class*="bg-[#141b2c]"],
+html.light button[class*="bg-[#151e34]"],
+html.light button[class*="bg-[#162035]"],
+html.light button[class*="bg-[#151f36]"]:not(aside button) {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+html.light button[class*="bg-[#121828]"]:hover,
+html.light button[class*="bg-[#141b2c]"]:hover,
+html.light button[class*="bg-[#151e34]"]:hover,
+html.light button[class*="bg-[#162035]"]:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* 10. CODE BOXES, TERMINAL & PRE */
+html.light pre,
+html.light code:not([class*="text-"]):not([class*="bg-"]),
+html.light [class*="group/code"] {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+
+/* 11. FORM CONTROLS (Inputs, Selects, Textareas) */
+html.light input:not([type="checkbox"]):not([type="radio"]),
+html.light textarea,
+html.light select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+html.light input:focus,
+html.light textarea:focus,
+html.light select:focus {
+  border-color: #2563eb !important;
+  outline: 2px solid rgba(37, 99, 235, 0.2) !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* 12. DROPDOWNS, POPOVERS, MODALS & DIALOGS (Including Portals) */
+html.light [role="dialog"],
+html.light [role="menu"],
+html.light [role="listbox"],
+html.light [role="tooltip"],
+html.light [data-radix-popper-content-wrapper] > *,
+html.light .popover-content,
+html.light .dropdown-menu {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.06) !important;
+}
+
+html.light .fixed.inset-0[class*="bg-black"] {
+  background-color: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+html.light .fixed.inset-0 [class*="bg-[#0e1322]"],
+html.light .fixed.inset-0 [class*="bg-[#0c111e]"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* 13. TOAST NOTIFICATIONS & ALERT BANNERS */
+html.light [class*="bg-red-950"] {
+  background-color: #fef2f2 !important;
+  border-color: #fecaca !important;
+  color: #991b1b !important;
+}
+
+html.light [class*="bg-red-950"] span,
+html.light [class*="text-red-200"] {
+  color: #991b1b !important;
+}
+
+html.light [class*="bg-emerald-950"] {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #065f46 !important;
+}
+
+html.light [class*="bg-emerald-950"] span,
+html.light [class*="text-emerald-200"] {
+  color: #065f46 !important;
+}
+
+html.light [class*="bg-blue-950"] {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #1e40af !important;
+}
+
+html.light [class*="bg-blue-950"] span,
+html.light [class*="text-blue-200"] {
+  color: #1e40af !important;
+}
+
+/* 14. HOVER STATES */
+html.light [class*="hover:bg-[#"]:hover,
+html.light [class*="hover:bg-slate-800"]:hover,
+html.light [class*="hover:bg-slate-700"]:hover {
+  background-color: #f1f5f9 !important;
+}
+
+html.light [class*="hover:text-white"]:hover {
+  color: #0f172a !important;
+}
+
+/* 15. USER MENU DROPDOWN */
+html.light [class*="bg-[#0d1222]"][class*="border"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+html.light [class*="bg-[#0d1222]"] [class*="bg-[#131b2e]"] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* 16. SCROLLBARS */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #07090e;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #f8fafc !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
+}
+
+/* 17. GLASS CARDS & EFFECTS IN LIGHT THEME */
+.glass-card {
+  background: rgba(14, 18, 32, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+html.light .glass-card {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06) !important;
+}
+
+.glass-card-active {
+  background: rgba(18, 24, 44, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.15), inset 0 0 15px rgba(59, 130, 246, 0.05);
+}
+
+html.light .glass-card-active {
+  background: rgba(239, 246, 255, 0.95) !important;
+  border: 1px solid rgba(37, 99, 235, 0.5) !important;
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.12) !important;
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+html.light .glow-blue {
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.2);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.35);
+}
+
+html.light .glow-purple {
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}

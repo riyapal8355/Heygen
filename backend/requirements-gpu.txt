@@ -1,0 +1,15 @@
+--extra-index-url https://download.pytorch.org/whl/cu124
+-r requirements.txt
+
+# Deterministic Pinned NVIDIA CUDA 12.4 Acceleration Packages
+# Compatible with nvidia/cuda:12.4.1-runtime-ubuntu22.04 and Ubuntu 22.04 LTS
+torch==2.4.1+cu124
+torchvision==0.19.1+cu124
+torchaudio==2.4.1+cu124
+
+# Generative AI & Diffusion Stack (Stable Diffusion v1.5 & MuseTalk CUDA pipelines)
+diffusers==0.30.3
+accelerate==0.34.2
+safetensors==0.4.5
+transformers==4.44.2
+huggingface-hub==0.24.7

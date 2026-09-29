@@ -1,0 +1,179 @@
+# ==============================================================================
+# HeyZen Autonomous AI Video Studio — Production Multi-Container Topology
+# ==============================================================================
+
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: heyzen-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-heyzen}
+      POSTGRES_USER: ${POSTGRES_USER:-heyzen}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - heyzen_postgres_data:/var/lib/postgresql/data
+    networks:
+      - heyzen-network
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4096M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-heyzen} -d ${POSTGRES_DB:-heyzen}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: heyzen-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 1024mb
+      --maxmemory-policy noeviction
+    volumes:
+      - heyzen_redis_data:/data
+    networks:
+      - heyzen-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1536M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: heyzen-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - heyzen_minio_data:/data
+    networks:
+      - heyzen-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 2048M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: ../infrastructure/docker/Dockerfile.api
+    container_name: heyzen-api
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      DEBUG: "false"
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-heyzen-assets}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      COOKIE_SECURE: "true"
+      COOKIE_SAMESITE: "lax"
+    networks:
+      - heyzen-network
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4096M
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  cpu-worker:
+    build:
+      context: ./backend
+      dockerfile: ../infrastructure/docker/Dockerfile.cpu-worker
+    container_name: heyzen-cpu-worker
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-heyzen-assets}
+      AI_RUNTIME_MODE: real
+      AI_ALLOW_AUTO_DOWNLOAD: "false"
+      AI_VERIFY_CHECKSUMS: "true"
+    volumes:
+      - heyzen_models_cache:/app/models_cache
+    networks:
+      - heyzen-network
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 6144M
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: heyzen-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/nginx/conf.d:/etc/nginx/conf.d:ro
+      - /etc/letsencrypt:/etc/nginx/ssl:ro
+    networks:
+      - heyzen-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    depends_on:
+      - api
+
+volumes:
+  heyzen_postgres_data:
+    name: heyzen_postgres_data
+  heyzen_redis_data:
+    name: heyzen_redis_data
+  heyzen_minio_data:
+    name: heyzen_minio_data
+  heyzen_models_cache:
+    name: heyzen_models_cache
+
+networks:
+  heyzen-network:
+    name: heyzen-network
+    driver: bridge

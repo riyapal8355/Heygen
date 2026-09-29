@@ -1,0 +1,56 @@
+# ==============================================================================
+# HeyZen Autonomous AI Video Studio — Production GPU Worker Compose Overlay
+# Phase 9: Dedicated NVIDIA CUDA GPU Worker (`gpu_ai`)
+# Usage:
+#   docker compose -f docker-compose.yml -f infrastructure/docker/docker-compose.gpu.yml up -d
+# ==============================================================================
+services:
+  heyzen-gpu-worker:
+    build:
+      context: ./backend
+      dockerfile: ../infrastructure/docker/Dockerfile.gpu-worker
+    container_name: heyzen-gpu-worker
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app.celery_app worker -Q gpu_ai -c 1 --max-tasks-per-child=50 --loglevel=INFO -n gpu_worker@%h
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - AI_PROVIDER_MODE=real
+      - AI_RUNTIME_MODE=real
+      - AI_PREFERRED_DEVICE=cuda
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-heyzen}:${POSTGRES_PASSWORD:-heyzen_dev_password}@postgres:5432/${POSTGRES_DB:-heyzen}
+      - REDIS_URL=redis://redis:6379/0
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_ACCESS_KEY_ID=${MINIO_ROOT_USER:-heyzen_admin}
+      - S3_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD:-heyzen_dev_password123}
+      - AI_MODEL_CACHE_DIR=/app/models_cache
+      - AI_ALLOW_AUTO_DOWNLOAD=false
+      - AI_VERIFY_CHECKSUMS=true
+      - GPU_MIN_VRAM_GB=8.0
+      - GPU_MIN_COMPUTE_CAPABILITY=7.0
+      - GPU_WORKER_REQUIRE_MODELS=true
+    volumes:
+      - heyzen_models_cache:/app/models_cache
+    networks:
+      - heyzen-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+volumes:
+  heyzen_models_cache:
+    name: heyzen_models_cache
+
+networks:
+  heyzen-network:
+    name: heyzen-network
