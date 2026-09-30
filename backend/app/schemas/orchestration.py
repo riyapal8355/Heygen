@@ -19,6 +19,10 @@ class GenerateProjectRequest(BaseModel):
     provider: Optional[str] = Field(None, description="Optional LLM provider override ('qwen', 'mock')")
     device: Optional[str] = Field(None, description="Optional compute device override ('cpu', 'cuda')")
     idempotency_key: Optional[str] = Field(None, description="Optional idempotency key for async task deduplication")
+    workflow_intent: Optional[str] = Field(None, description="Originating workflow intent ('ppt_pdf_to_video', 'cinematic_shots', etc.)")
+    workflow_label: Optional[str] = Field(None, description="Human readable workflow label")
+    workflow_metadata: Optional[dict[str, Any]] = Field(None, description="Arbitrary workflow context and modal configuration")
+    attachment: Optional[dict[str, Any]] = Field(None, description="Optional uploaded file or attachment dictionary")
 
     @field_validator("prompt", mode="before")
     @classmethod
@@ -75,7 +79,7 @@ class GenerateProjectRequest(BaseModel):
                 return None
         return v
 
-    @field_validator("avatar_id", "voice_id", "provider", "device", "idempotency_key", mode="before")
+    @field_validator("avatar_id", "voice_id", "provider", "device", "idempotency_key", "workflow_intent", "workflow_label", mode="before")
     @classmethod
     def empty_string_to_none(cls, v: Any) -> Optional[str]:
         if v is None or (isinstance(v, str) and not v.strip()):

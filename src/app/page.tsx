@@ -378,6 +378,8 @@ export function DashboardContent({
         sidebarSection: "single_scene",
       });
     } else if (section === "video_agent") {
+      setVideoAgentContext(null);
+      setInitialVideoAgentPrompt("");
       setCurrentView("video_agent");
       setActiveRailTab("home");
       pushNavHistory({
@@ -402,6 +404,19 @@ export function DashboardContent({
         sidebarSection: "home",
       });
     }
+  };
+
+  const handleLaunchVideoAgentWithContext = (context: VideoAgentGenerationContext) => {
+    setVideoAgentContext(context);
+    setInitialVideoAgentPrompt(context.userPrompt || context.prompt || "");
+    setCurrentView("video_agent");
+    setActiveRailTab("create");
+    setActiveSidebarSection("video_agent");
+    pushNavHistory({
+      view: "video_agent",
+      railTab: "create",
+      sidebarSection: "video_agent",
+    });
   };
 
   const handleOnboardingNavigate = (view: string) => {
@@ -443,10 +458,22 @@ export function DashboardContent({
         generationContext={videoAgentContext}
         onOpenStudio={(projId) => handleOpenStudio(projId)}
         onBackToDashboard={() => {
-          setCurrentView("dashboard");
-          setActiveRailTab("home");
-          setActiveSidebarSection("home");
-          pushNavHistory({ view: "dashboard", railTab: "home", sidebarSection: "home" });
+          const fromApp =
+            videoAgentContext?.sourceApp === "ppt_pdf_to_video" ||
+            videoAgentContext?.sourceApp === "cinematic_shots";
+          setVideoAgentContext(null);
+          setInitialVideoAgentPrompt("");
+          if (fromApp) {
+            setCurrentView("apps");
+            setActiveRailTab("tools");
+            setActiveAppsSection("home");
+            pushNavHistory({ view: "apps", railTab: "tools", appsSection: "home" });
+          } else {
+            setCurrentView("dashboard");
+            setActiveRailTab("home");
+            setActiveSidebarSection("home");
+            pushNavHistory({ view: "dashboard", railTab: "home", sidebarSection: "home" });
+          }
         }}
       />
     );
@@ -497,6 +524,7 @@ export function DashboardContent({
           activeSection={currentView === "brand_glossary" ? "translate" : activeAppsSection}
           theme={theme}
           onOpenProject={handleOpenStudio}
+          onSeeAllProjects={handleNavigateProjects}
           onSelectSection={(sec) => {
             if (sec === "translate") {
               setCurrentView("translate");
@@ -618,12 +646,39 @@ export function DashboardContent({
         ) : (
           <AppLibrary
             onOpenStudio={handleOpenStudio}
-            onNavigateVideoAgent={() => handleSidebarSelect("video_agent")}
+            onNavigateVideoAgent={() => {
+              setVideoAgentContext(null);
+              setInitialVideoAgentPrompt("");
+              handleSidebarSelect("video_agent");
+            }}
+            onLaunchVideoAgentWithContext={handleLaunchVideoAgentWithContext}
             onNavigateTranslate={() => {
               setCurrentView("translate");
               setActiveRailTab("tools");
               pushNavHistory({ view: "translate", railTab: "tools" });
             }}
+            onNavigateSingleScene={() => {
+              setCurrentView("single_scene");
+              setActiveRailTab("home");
+              pushNavHistory({ view: "single_scene", railTab: "home" });
+            }}
+            onNavigateSceneByScene={() => {
+              setCurrentView("scene_by_scene");
+              setActiveRailTab("home");
+              pushNavHistory({ view: "scene_by_scene", railTab: "home" });
+            }}
+            onNavigateBrand={() => {
+              setCurrentView("brand");
+              setActiveRailTab("brand");
+              pushNavHistory({ view: "brand", railTab: "brand" });
+            }}
+            onNavigateDesignLook={() => {
+              setCurrentView("design_look");
+              setActiveRailTab("avatar");
+              setActiveAvatarSection("design_look");
+              pushNavHistory({ view: "design_look", railTab: "avatar" });
+            }}
+            onNavigateProjects={handleNavigateProjects}
           />
         )
       ) : currentView === "projects" ? (

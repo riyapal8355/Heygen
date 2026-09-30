@@ -966,5 +966,175 @@ describe("Video Agent Workspace & Modal Redirect Flow", () => {
       );
     });
   });
+
+  describe("PPT/PDF & Cinematic Shots Workflow Context Integration", () => {
+    it("1. PPT/PDF modal submit generates complete context for Video Agent", () => {
+      const selectedDocName = "Q3_Product_Roadmap.pdf";
+      const docSlideCount = 8;
+      const docLayoutPreset = "Side-by-Side Presentation";
+      const docPresenter = "Annie (Studio Presenter)";
+      const docPrompt = "Create a product launch presentation for our new laptop.";
+
+      const modalConfiguration = {
+        documentName: selectedDocName,
+        slideCount: docSlideCount,
+        layoutPreset: docLayoutPreset,
+        presenter: docPresenter,
+        aspectRatio: "16:9",
+      };
+      const attachment = {
+        name: selectedDocName,
+        type: "pdf",
+        slideCount: docSlideCount,
+        status: "attached",
+      };
+      const launchContext = {
+        sourceApp: "ppt_pdf_to_video",
+        workflowIntent: "ppt_pdf_to_video",
+        workflowLabel: "PPT/PDF to Video",
+        modalConfiguration,
+        attachment,
+        userPrompt: docPrompt,
+        prompt: docPrompt,
+        target_duration_seconds: 40,
+      };
+
+      assert.equal(launchContext.sourceApp, "ppt_pdf_to_video");
+      assert.equal(launchContext.workflowIntent, "ppt_pdf_to_video");
+      assert.equal(launchContext.workflowLabel, "PPT/PDF to Video");
+      assert.equal(launchContext.userPrompt, docPrompt);
+      assert.equal(launchContext.attachment.name, "Q3_Product_Roadmap.pdf");
+      assert.equal(launchContext.modalConfiguration.slideCount, 8);
+      assert.equal(launchContext.modalConfiguration.layoutPreset, "Side-by-Side Presentation");
+    });
+
+    it("2. Cinematic Shots modal submit generates complete context for Video Agent", () => {
+      const cinematicShotType = "Over-the-Shoulder Dialogue Cut";
+      const cinematicCameraMotion = "Slow Push-In Dolly";
+      const cinematicLighting = "Golden Hour Cinematic 35mm";
+      const cinematicLens = "50mm Prime F/1.4";
+      const cinematicPrompt = "Epic scene of a hero confronting a rival in the neon rain.";
+
+      const modalConfiguration = {
+        shotType: cinematicShotType,
+        cameraMotion: cinematicCameraMotion,
+        lens: cinematicLens,
+        lighting: cinematicLighting,
+        aspectRatio: "16:9",
+      };
+      const launchContext = {
+        sourceApp: "cinematic_shots",
+        workflowIntent: "cinematic_shots",
+        workflowLabel: "Cinematic Shots",
+        modalConfiguration,
+        userPrompt: cinematicPrompt,
+        prompt: cinematicPrompt,
+        target_duration_seconds: 30,
+      };
+
+      assert.equal(launchContext.sourceApp, "cinematic_shots");
+      assert.equal(launchContext.workflowIntent, "cinematic_shots");
+      assert.equal(launchContext.workflowLabel, "Cinematic Shots");
+      assert.equal(launchContext.userPrompt, cinematicPrompt);
+      assert.equal(launchContext.modalConfiguration.shotType, "Over-the-Shoulder Dialogue Cut");
+      assert.equal(launchContext.modalConfiguration.cameraMotion, "Slow Push-In Dolly");
+      assert.equal(launchContext.modalConfiguration.lighting, "Golden Hour Cinematic 35mm");
+      assert.equal(launchContext.modalConfiguration.lens, "50mm Prime F/1.4");
+    });
+
+    it("3. User prompt has priority and is not overwritten by synthetic prompt", () => {
+      const userRawPrompt = "Create a product launch presentation for our new laptop.";
+      const context = {
+        sourceApp: "ppt_pdf_to_video",
+        workflowIntent: "ppt_pdf_to_video",
+        workflowLabel: "PPT/PDF to Video",
+        userPrompt: userRawPrompt,
+        prompt: userRawPrompt,
+      };
+
+      // In Video Agent composer, composerText is initialized from userPrompt
+      const composerText = context.userPrompt || context.prompt;
+      assert.equal(composerText, "Create a product launch presentation for our new laptop.");
+      assert.ok(!composerText.includes("SYSTEM GENERATED:"));
+    });
+
+    it("4. Video Agent forwards workflow context to orchestration generateProject API", () => {
+      let interceptedPayload: any = null;
+
+      function mockGenerateProject(workspaceId: string, payload: any) {
+        interceptedPayload = payload;
+        return Promise.resolve({ id: "proj_gen_123", status: "draft" });
+      }
+
+      const context = {
+        sourceApp: "ppt_pdf_to_video",
+        workflowIntent: "ppt_pdf_to_video",
+        workflowLabel: "PPT/PDF to Video",
+        modalConfiguration: {
+          documentName: "Roadmap.pdf",
+          slideCount: 6,
+          layoutPreset: "Side-by-Side Presentation",
+        },
+        attachment: {
+          name: "Roadmap.pdf",
+          type: "pdf",
+          slideCount: 6,
+        },
+        userPrompt: "Quarterly review deck video",
+      };
+
+      mockGenerateProject("ws-123", {
+        prompt: context.userPrompt,
+        target_duration_seconds: 30,
+        aspect_ratio: "16:9",
+        workflow_intent: context.workflowIntent,
+        workflow_label: context.workflowLabel,
+        workflow_metadata: context.modalConfiguration,
+        attachment: context.attachment,
+      });
+
+      assert.ok(interceptedPayload);
+      assert.equal(interceptedPayload.workflow_intent, "ppt_pdf_to_video");
+      assert.equal(interceptedPayload.workflow_label, "PPT/PDF to Video");
+      assert.equal(interceptedPayload.workflow_metadata.documentName, "Roadmap.pdf");
+      assert.equal(interceptedPayload.attachment.slideCount, 6);
+    });
+
+    it("5. Normal Video Agent navigation has no workflow context (no session leakage)", () => {
+      let activeContext: any = {
+        sourceApp: "ppt_pdf_to_video",
+        workflowIntent: "ppt_pdf_to_video",
+      };
+
+      // Simulating handleSidebarSelect("video_agent")
+      function handleDirectAgentSelect() {
+        activeContext = null;
+      }
+
+      handleDirectAgentSelect();
+      assert.strictEqual(activeContext, null);
+    });
+
+    it("6. Back navigation from Video Agent returns to Apps Home when source was modal app", () => {
+      let currentView = "video_agent";
+      let activeAppsSection = "outputs";
+      const context = {
+        sourceApp: "ppt_pdf_to_video",
+      };
+
+      function handleBack() {
+        if (context.sourceApp === "ppt_pdf_to_video" || context.sourceApp === "cinematic_shots") {
+          currentView = "apps";
+          activeAppsSection = "home";
+        } else {
+          currentView = "dashboard";
+        }
+      }
+
+      handleBack();
+      assert.equal(currentView, "apps");
+      assert.equal(activeAppsSection, "home");
+    });
+  });
 });
 

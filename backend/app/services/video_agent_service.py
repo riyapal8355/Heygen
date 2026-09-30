@@ -179,7 +179,13 @@ class VideoAgentService:
             )
 
         target_duration = float(request.target_duration_seconds or 30.0)
-        if target_duration <= 20:
+        workflow_meta = request.workflow_metadata or {}
+        workflow_intent = request.workflow_intent
+
+        if workflow_intent == "ppt_pdf_to_video" and ("slide_count" in workflow_meta or "docSlideCount" in workflow_meta):
+            slide_cnt = int(workflow_meta.get("slide_count") or workflow_meta.get("docSlideCount") or 8)
+            target_scenes = max(2, min(24, slide_cnt))
+        elif target_duration <= 20:
             target_scenes = 2
         elif target_duration <= 45:
             target_scenes = 3
@@ -205,6 +211,15 @@ class VideoAgentService:
             "target_scenes": target_scenes,
             "aspect_ratio": request.aspect_ratio,
         }
+        if request.workflow_intent:
+            context["workflow_intent"] = request.workflow_intent
+        if request.workflow_label:
+            context["workflow_label"] = request.workflow_label
+        if request.workflow_metadata:
+            context["workflow_metadata"] = request.workflow_metadata
+        if request.attachment:
+            context["attachment"] = request.attachment
+
         script_result = await llm_provider.generate_script(
             prompt=request.prompt,
             context=context,
@@ -224,7 +239,38 @@ class VideoAgentService:
             {"type": "gradient", "gradient": "linear-gradient(135deg, #311042 0%, #6366F1 100%)", "value": "linear-gradient(135deg, #311042 0%, #6366F1 100%)", "color": "#311042", "gradient_start": "#311042", "gradient_end": "#6366F1", "gradient_colors": ["#311042", "#6366F1"]},
             {"type": "gradient", "gradient": "linear-gradient(135deg, #451A03 0%, #D97706 100%)", "value": "linear-gradient(135deg, #451A03 0%, #D97706 100%)", "color": "#451A03", "gradient_start": "#451A03", "gradient_end": "#D97706", "gradient_colors": ["#451A03", "#D97706"]},
         ]
-        camera_motions = ["slow_zoom_in", "pan_left", "presenter_closeup", "presenter_medium"]
+
+        if workflow_intent == "cinematic_shots":
+            chosen_cam = str(workflow_meta.get("camera_motion") or workflow_meta.get("cinematicCameraMotion") or "")
+            if "dolly" in chosen_cam.lower() or "push" in chosen_cam.lower():
+                lead_cam = "slow_zoom_in"
+            elif "steadicam" in chosen_cam.lower() or "follow" in chosen_cam.lower():
+                lead_cam = "presenter_medium"
+            elif "orbital" in chosen_cam.lower() or "360" in chosen_cam.lower():
+                lead_cam = "pan_left"
+            elif "rack" in chosen_cam.lower() or "focus" in chosen_cam.lower():
+                lead_cam = "presenter_closeup"
+            else:
+                lead_cam = "slow_zoom_in"
+            camera_motions = [lead_cam, "pan_right", "slow_zoom_in", "presenter_closeup", "pan_left"]
+
+            lighting_str = str(workflow_meta.get("lighting") or workflow_meta.get("cinematicLighting") or "")
+            if "golden hour" in lighting_str.lower():
+                background_palette = [
+                    {"type": "gradient", "gradient": "linear-gradient(135deg, #1C0A00 0%, #78350F 50%, #D97706 100%)", "value": "linear-gradient(135deg, #1C0A00 0%, #78350F 50%, #D97706 100%)", "color": "#1C0A00"},
+                    {"type": "gradient", "gradient": "linear-gradient(135deg, #2D1406 0%, #92400E 50%, #F59E0B 100%)", "value": "linear-gradient(135deg, #2D1406 0%, #92400E 50%, #F59E0B 100%)", "color": "#2D1406"},
+                ]
+            elif "cyberpunk" in lighting_str.lower():
+                background_palette = [
+                    {"type": "gradient", "gradient": "linear-gradient(135deg, #090014 0%, #3B0764 50%, #06B6D4 100%)", "value": "linear-gradient(135deg, #090014 0%, #3B0764 50%, #06B6D4 100%)", "color": "#090014"},
+                    {"type": "gradient", "gradient": "linear-gradient(135deg, #030712 0%, #1E1B4B 50%, #818CF8 100%)", "value": "linear-gradient(135deg, #030712 0%, #1E1B4B 50%, #818CF8 100%)", "color": "#030712"},
+                ]
+            elif "moody" in lighting_str.lower() or "noir" in lighting_str.lower():
+                background_palette = [
+                    {"type": "gradient", "gradient": "linear-gradient(135deg, #050505 0%, #171717 50%, #262626 100%)", "value": "linear-gradient(135deg, #050505 0%, #171717 50%, #262626 100%)", "color": "#050505"},
+                ]
+        else:
+            camera_motions = ["slow_zoom_in", "pan_left", "presenter_closeup", "presenter_medium"]
         accent_colors = ["#3B82F6", "#10B981", "#8B5CF6", "#F59E0B", "#EC4899", "#06B6D4"]
         scene_plan: List[Dict[str, Any]] = []
         total_suggested = len(script_result.suggested_scenes) if script_result.suggested_scenes else 1
@@ -529,6 +575,24 @@ class VideoAgentService:
             metadata["brand_kit_id"] = str(request.brand_kit_id)
         if script_result.metadata:
             metadata["llm_metrics"] = script_result.metadata
+
+        if request.workflow_intent:
+            metadata["workflow_intent"] = request.workflow_intent
+        if request.workflow_label:
+            metadata["workflow_label"] = request.workflow_label
+        if request.workflow_metadata:
+            metadata["workflow_metadata"] = request.workflow_metadata
+        if request.attachment:
+            metadata["attachment"] = request.attachment
+
+        if request.workflow_intent == "ppt_pdf_to_video":
+            metadata["presentation_mode"] = True
+            metadata["document_parsing_status"] = (
+                "Direct binary PPT/PDF document slide extraction is currently unavailable on the backend. "
+                "Slide sequence, narration, and timings structured from user instructions and deck configuration."
+            )
+        elif request.workflow_intent == "cinematic_shots":
+            metadata["cinematic_configuration"] = request.workflow_metadata
 
         document = ProjectDocumentV1(
             schema_version=1,

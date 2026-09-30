@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from "react";
 import {
   Home,
-  Layers,
   PanelLeftClose,
-  Sparkles,
   Link as LinkIcon,
-  Clock,
   LayoutGrid,
+  RefreshCw,
+  Clock,
+  Film,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
@@ -16,12 +16,14 @@ import { api } from "@/lib/api";
 interface AppsSidebarProps {
   activeSection: "home" | "integrations" | "outputs" | "translate";
   onSelectSection: (section: "home" | "integrations" | "outputs" | "translate") => void;
+  onSeeAllProjects?: () => void;
   onSeeAllOutputs?: () => void;
   onOpenProject?: (projectId: string) => void;
   theme?: "light" | "dark";
 }
 
-function formatTimeAgo(date: Date): string {
+export function formatTimeAgo(date: Date): string {
+  if (isNaN(date.getTime())) return "Recently";
   const diffSec = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
   if (diffSec < 60) return "Just now";
   const diffMin = Math.floor(diffSec / 60);
@@ -29,12 +31,14 @@ function formatTimeAgo(date: Date): string {
   const diffHours = Math.floor(diffMin / 60);
   if (diffHours < 24) return `${diffHours}h ago`;
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+  if (diffDays < 30) return `${diffDays}d ago`;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 export default function AppsSidebar({
   activeSection,
   onSelectSection,
+  onSeeAllProjects,
   onSeeAllOutputs,
   onOpenProject,
   theme = "dark",
@@ -44,32 +48,70 @@ export default function AppsSidebar({
   const [recentItems, setRecentItems] = useState<
     Array<{ id: string; title: string; time: string; type: string }>
   >([]);
+  const [isLoadingRecents, setIsLoadingRecents] = useState(true);
+  const [recentsError, setRecentsError] = useState<string | null>(null);
+  const [fetchKey, setFetchKey] = useState(0);
 
   useEffect(() => {
-    if (!currentWorkspace?.id) return;
+    if (!currentWorkspace?.id) {
+      setIsLoadingRecents(false);
+      setRecentItems([]);
+      return;
+    }
     let cancelled = false;
+    setIsLoadingRecents(true);
+    setRecentsError(null);
 
     api.projects
-      .list(currentWorkspace.id, { limit: 3 })
+      .list(currentWorkspace.id, { limit: 10 })
       .then((items) => {
         if (cancelled) return;
-        setRecentItems(
-          items.slice(0, 3).map((item) => ({
+        const sorted = [...(items || [])].sort((a, b) => {
+          const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
+          const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
+          return timeB - timeA;
+        });
+
+        const formatted = sorted.slice(0, 5).map((item) => {
+          let typeLabel = "AI Studio";
+          if (item.project_type === "agent") typeLabel = "Video Agent";
+          else if (item.project_type === "single_scene") typeLabel = "Single Scene";
+          else if (item.project_type === "scene_by_scene") typeLabel = "Multi Scene";
+          else if (item.project_type === "translate") typeLabel = "Translation";
+
+          const rawDate = new Date(item.updated_at || item.created_at);
+          const timeStr = isNaN(rawDate.getTime()) ? "Recently" : formatTimeAgo(rawDate);
+
+          return {
             id: item.id,
-            title: item.title || "Untitled Video",
-            time: formatTimeAgo(new Date(item.updated_at || item.created_at)),
-            type: item.project_type === "agent" ? "Video Agent" : "AI Studio",
-          }))
-        );
+            title: item.title?.trim() || "Untitled Video",
+            time: timeStr,
+            type: typeLabel,
+          };
+        });
+
+        setRecentItems(formatted);
+        setIsLoadingRecents(false);
       })
       .catch(() => {
-        if (!cancelled) setRecentItems([]);
+        if (!cancelled) {
+          setRecentsError("Failed to load recents");
+          setIsLoadingRecents(false);
+        }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [currentWorkspace?.id]);
+  }, [currentWorkspace?.id, fetchKey]);
+
+  const handleSeeAll = () => {
+    if (onSeeAllProjects) {
+      onSeeAllProjects();
+    } else if (onSeeAllOutputs) {
+      onSeeAllOutputs();
+    }
+  };
 
   return (
     <aside
@@ -95,7 +137,9 @@ export default function AppsSidebar({
             </span>
           </div>
           <button
+            type="button"
             title="Collapse sidebar"
+            aria-label="Collapse sidebar"
             className={`p-1 rounded-md transition-colors cursor-pointer ${
               isLight
                 ? "text-slate-400 hover:text-slate-700 hover:bg-slate-100"
@@ -107,10 +151,12 @@ export default function AppsSidebar({
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex flex-col gap-1.5">
+        <nav className="flex flex-col gap-1.5" aria-label="Apps Navigation">
           {/* Home Item */}
           <button
             type="button"
+            id="apps-sidebar-nav-home"
+            data-testid="apps-sidebar-nav-home"
             onClick={() => onSelectSection("home")}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 text-left cursor-pointer ${
               isLight
@@ -140,6 +186,8 @@ export default function AppsSidebar({
           {/* Integrations Item */}
           <button
             type="button"
+            id="apps-sidebar-nav-integrations"
+            data-testid="apps-sidebar-nav-integrations"
             onClick={() => onSelectSection("integrations")}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 text-left cursor-pointer ${
               isLight
@@ -172,24 +220,27 @@ export default function AppsSidebar({
           className={`h-[1px] my-5 mx-1 ${
             isLight ? "bg-slate-200" : "bg-[#151c2d]"
           }`}
-        ></div>
+        />
 
         {/* RECENTS Section */}
-        <div className="px-1">
+        <div className="px-1" id="apps-sidebar-recents" data-testid="apps-sidebar-recents">
           <div className="flex items-center justify-between mb-2.5">
             <span
-              className={`text-[10px] font-bold uppercase tracking-wider ${
+              className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
                 isLight ? "text-slate-400" : "text-slate-500"
               }`}
             >
-              Recents
+              <Clock size={11} />
+              <span>Recents</span>
             </span>
             <button
+              id="apps-recents-see-all-btn"
+              data-testid="apps-recents-see-all-btn"
               type="button"
-              onClick={onSeeAllOutputs}
+              onClick={handleSeeAll}
               className={`text-[10px] font-bold cursor-pointer transition-colors ${
                 isLight
-                  ? "text-slate-400 hover:text-slate-700"
+                  ? "text-slate-500 hover:text-slate-900"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -198,8 +249,45 @@ export default function AppsSidebar({
           </div>
 
           <div className="space-y-2">
-            {recentItems.length === 0 ? (
+            {isLoadingRecents ? (
+              <div
+                data-testid="apps-recents-loading"
+                className="space-y-2 animate-pulse py-1"
+              >
+                <div
+                  className={`h-12 rounded-xl ${
+                    isLight ? "bg-slate-100" : "bg-[#0e1422]"
+                  }`}
+                />
+                <div
+                  className={`h-12 rounded-xl ${
+                    isLight ? "bg-slate-100" : "bg-[#0e1422]"
+                  }`}
+                />
+              </div>
+            ) : recentsError ? (
+              <div
+                data-testid="apps-recents-error"
+                className={`p-2.5 rounded-xl text-center border ${
+                  isLight
+                    ? "bg-rose-50 border-rose-200 text-rose-700"
+                    : "bg-rose-950/30 border-rose-900/50 text-rose-300"
+                }`}
+              >
+                <p className="text-[10px] font-medium mb-1.5">{recentsError}</p>
+                <button
+                  type="button"
+                  data-testid="apps-recents-retry-btn"
+                  onClick={() => setFetchKey((k) => k + 1)}
+                  className="inline-flex items-center gap-1 text-[10px] font-bold underline cursor-pointer hover:opacity-80"
+                >
+                  <RefreshCw size={10} />
+                  <span>Retry</span>
+                </button>
+              </div>
+            ) : recentItems.length === 0 ? (
               <p
+                data-testid="apps-recents-empty"
                 className={`text-[10px] px-1 py-1 italic ${
                   isLight ? "text-slate-400" : "text-slate-500"
                 }`}
@@ -210,7 +298,15 @@ export default function AppsSidebar({
               recentItems.map((item) => (
                 <div
                   key={item.id}
-                  onClick={() => (onOpenProject ? onOpenProject(item.id) : onSeeAllOutputs && onSeeAllOutputs())}
+                  id={`apps-recent-project-${item.id}`}
+                  data-testid={`recent-project-card-${item.id}`}
+                  onClick={() => {
+                    if (onOpenProject) {
+                      onOpenProject(item.id);
+                    } else {
+                      handleSeeAll();
+                    }
+                  }}
                   className={`p-2.5 rounded-xl cursor-pointer transition-all shadow-xs group ${
                     isLight
                       ? "bg-slate-50 hover:bg-slate-100/90 border border-slate-200/70"

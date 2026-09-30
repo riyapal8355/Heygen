@@ -787,7 +787,11 @@ export default function TranslateVideos({
   );
 
   return (
-    <div className={`flex-1 h-screen overflow-y-auto ${isLight ? "bg-slate-50 text-slate-900" : "bg-[#07090e] text-slate-100"} flex flex-col font-sans select-none relative scrollbar-thin`}>
+    <div
+      id="translate-videos-view"
+      data-testid="translate-videos-view"
+      className={`flex-1 h-screen overflow-y-auto ${isLight ? "bg-slate-50 text-slate-900" : "bg-[#07090e] text-slate-100"} flex flex-col font-sans select-none relative scrollbar-thin`}
+    >
       {/* 1. TOP BAR */}
       <header className="w-full px-6 sm:px-10 pt-6 pb-2 flex items-center justify-between z-20">
         <div>

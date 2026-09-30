@@ -361,7 +361,11 @@ export default function SceneByScene({
   };
 
   return (
-    <div className="flex-1 h-screen overflow-y-auto bg-[#07090e] text-slate-100 flex flex-col font-sans select-none relative scrollbar-thin scrollbar-thumb-[#151c2d]">
+    <div
+      id="scene-by-scene-view"
+      data-testid="scene-by-scene-view"
+      className="flex-1 h-screen overflow-y-auto bg-[#07090e] text-slate-100 flex flex-col font-sans select-none relative scrollbar-thin scrollbar-thumb-[#151c2d]"
+    >
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#18233c] text-white border border-[#2b3a5d]/50 text-xs font-semibold px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-3 duration-200">

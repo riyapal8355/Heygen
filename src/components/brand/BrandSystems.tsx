@@ -584,7 +584,11 @@ export default function BrandSystems({
   };
 
   return (
-    <div className={`flex-1 h-screen overflow-y-auto ${isLight ? "bg-slate-50 text-slate-900" : "bg-[#07090e] text-slate-100"} flex flex-col font-sans select-none`}>
+    <div
+      id="brand-systems-view"
+      data-testid="brand-systems-view"
+      className={`flex-1 h-screen overflow-y-auto ${isLight ? "bg-slate-50 text-slate-900" : "bg-[#07090e] text-slate-100"} flex flex-col font-sans select-none`}
+    >
       {/* Top Header Section (Matches Reference Screenshot) */}
       <div className={`w-full px-8 sm:px-10 pt-8 pb-5 flex items-center justify-between border-b ${isLight ? "border-slate-200 bg-white" : "border-[#1b2940] bg-[#07090e]"} z-20`}>
         <div>

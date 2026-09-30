@@ -86,6 +86,10 @@ async def generate_project(
             "auto_synthesize_speech": payload.auto_synthesize_speech,
             "provider": payload.provider,
             "device": payload.device,
+            "workflow_intent": payload.workflow_intent,
+            "workflow_label": payload.workflow_label,
+            "workflow_metadata": payload.workflow_metadata,
+            "attachment": payload.attachment,
         }
         job_req = JobSubmitRequest(
             job_type="generate_project",

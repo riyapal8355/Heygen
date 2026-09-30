@@ -31,6 +31,7 @@ import {
   Download,
   ChevronDown,
   Check,
+  Camera,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -40,7 +41,7 @@ import ChooseAvatarModal from "./ChooseAvatarModal";
 import { AVATAR_OPTIONS, VOICE_OPTIONS, BRAND_SYSTEM_OPTIONS } from "./videoAgentData";
 
 export interface VideoAgentGenerationContext {
-  prompt: string;
+  prompt?: string;
   avatar?: any;
   voice?: any;
   look?: any;
@@ -52,6 +53,12 @@ export interface VideoAgentGenerationContext {
   seedance?: boolean;
   template?: any;
   target_duration_seconds?: number;
+  sourceApp?: string;
+  workflowIntent?: string;
+  workflowLabel?: string;
+  modalConfiguration?: Record<string, any>;
+  attachment?: Record<string, any>;
+  userPrompt?: string;
 }
 
 export const DURATION_PRESETS = [
@@ -194,10 +201,17 @@ export default function VideoAgentWorkspace({
   ]);
 
   // Composer state
-  const [composerText, setComposerText] = useState("");
+  const [composerText, setComposerText] = useState(() => {
+    return generationContext?.userPrompt || generationContext?.prompt || initialPrompt || "";
+  });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
-  const [attachedFiles, setAttachedFiles] = useState<string[]>([]);
+  const [attachedFiles, setAttachedFiles] = useState<string[]>(() => {
+    if (generationContext?.attachment?.name) {
+      return [generationContext.attachment.name];
+    }
+    return generationContext?.attachments || [];
+  });
 
   // Artifacts state
   const [artifacts, setArtifacts] = useState<VideoArtifact[]>([]);
@@ -381,10 +395,29 @@ export default function VideoAgentWorkspace({
       });
   }, [effectiveWorkspaceId]);
 
+  // Sync composer text and attached files whenever generationContext changes
+  useEffect(() => {
+    if (generationContext?.workflowIntent) {
+      const p = generationContext.userPrompt || generationContext.prompt || initialPrompt || "";
+      if (p) setComposerText(p);
+      if (generationContext.attachment?.name) {
+        setAttachedFiles([generationContext.attachment.name]);
+      }
+    }
+  }, [generationContext, initialPrompt]);
+
   // Trigger initial generation if context or prompt is provided AND workspace is ready
   useEffect(() => {
     if (hasTriggeredInitialRef.current) return;
     if (!effectiveWorkspaceId) return; // Wait until workspace is ready
+
+    // When launched from a modal workflow (PPT/PDF or Cinematic Shots), do NOT auto-execute.
+    // The user must review, optionally edit their prompt, and click Generate.
+    if (generationContext?.workflowIntent) {
+      hasTriggeredInitialRef.current = true;
+      return;
+    }
+
     const promptToRun = generationContext?.prompt || initialPrompt;
     if (promptToRun && promptToRun.trim().length > 0) {
       hasTriggeredInitialRef.current = true;
@@ -559,12 +592,16 @@ export default function VideoAgentWorkspace({
         {
           prompt: prompt.trim(),
           target_duration_seconds: durationToUse,
-          aspect_ratio: "16:9",
+          aspect_ratio: (context?.modalConfiguration as any)?.aspectRatio || "16:9",
           avatar_id: resolvedAvatarId || undefined,
           voice_id: resolvedVoiceId || undefined,
           video_tone: context?.speed || "Professional",
           auto_synthesize_speech: false,
           run_async: true,
+          workflow_intent: context?.workflowIntent,
+          workflow_label: context?.workflowLabel,
+          workflow_metadata: context?.modalConfiguration,
+          attachment: context?.attachment,
         }
       );
 
@@ -944,6 +981,8 @@ export default function VideoAgentWorkspace({
 
   return (
     <div
+      id="video-agent-workspace"
+      data-testid="video-agent-workspace"
       className={`h-screen w-screen flex flex-col overflow-hidden font-sans select-none transition-colors ${
         isLight ? "bg-slate-50 text-slate-900" : "bg-[#07090e] text-slate-100"
       }`}
@@ -962,6 +1001,8 @@ export default function VideoAgentWorkspace({
         <div className="flex items-center gap-3">
           <button
             type="button"
+            id="video-agent-home-btn"
+            data-testid="video-agent-home-btn"
             onClick={onBackToDashboard}
             className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm active:scale-95 ${
               isLight
@@ -1082,6 +1123,103 @@ export default function VideoAgentWorkspace({
 
           {/* Messages Scroll Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-800">
+            {/* WORKFLOW CONTEXT BANNER (when launched from PPT/PDF or Cinematic Shots) */}
+            {generationContext?.workflowIntent && (
+              <div
+                id="video-agent-workflow-context"
+                data-testid="video-agent-workflow-context"
+                className={`p-4 rounded-2xl border shadow-lg transition-all mb-4 ${
+                  generationContext.workflowIntent === "ppt_pdf_to_video"
+                    ? isLight
+                      ? "bg-rose-50/90 border-rose-200 text-rose-950"
+                      : "bg-[#180f1d] border-rose-500/40 text-rose-100"
+                    : isLight
+                    ? "bg-violet-50/90 border-violet-200 text-violet-950"
+                    : "bg-[#141028] border-violet-500/40 text-violet-100"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3 mb-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-2 rounded-xl bg-white/10 text-white flex items-center justify-center">
+                      {generationContext.workflowIntent === "ppt_pdf_to_video" ? (
+                        <FileText size={18} className="text-rose-400" />
+                      ) : (
+                        <Camera size={18} className="text-violet-400" />
+                      )}
+                    </span>
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                        <span id="workflow-context-label">
+                          {generationContext.workflowLabel ||
+                            (generationContext.workflowIntent === "ppt_pdf_to_video"
+                              ? "PPT/PDF to Video"
+                              : "Cinematic Shots")}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          Active Workflow Context
+                        </span>
+                      </h4>
+                      <p className="text-[11px] opacity-80 mt-0.5">
+                        {generationContext.workflowIntent === "ppt_pdf_to_video"
+                          ? "Turn presentation decks into structured timeline scenes with presenter narration"
+                          : "Hollywood-grade framing, camera motion, lighting, and visual depth"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configuration parameters chips */}
+                {generationContext.modalConfiguration && (
+                  <div
+                    id="workflow-context-config"
+                    data-testid="workflow-context-config"
+                    className="flex flex-wrap gap-1.5 text-[10px] pt-1"
+                  >
+                    {Object.entries(generationContext.modalConfiguration).map(([key, val]) => {
+                      if (!val || typeof val === "object") return null;
+                      return (
+                        <span
+                          key={key}
+                          className="px-2 py-1 rounded-lg font-medium border bg-black/25 border-white/10"
+                        >
+                          <strong className="opacity-70 capitalize">
+                            {key.replace(/([A-Z])/g, " $1")}:
+                          </strong>{" "}
+                          <span>{String(val)}</span>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Attachment chip if present */}
+                {generationContext.attachment && (
+                  <div
+                    id="workflow-context-attachment"
+                    data-testid="workflow-context-attachment"
+                    className="mt-2.5 flex items-center gap-2 p-2 rounded-xl bg-black/30 border border-white/10 text-[11px]"
+                  >
+                    <FileText size={14} className="text-rose-400 shrink-0" />
+                    <span className="font-semibold truncate">
+                      {generationContext.attachment.name || "Attachment"}
+                    </span>
+                    {generationContext.attachment.slideCount && (
+                      <span className="text-[10px] opacity-75">
+                        ({generationContext.attachment.slideCount} slides)
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Honest backend parsing notice for PPT/PDF */}
+                {generationContext.workflowIntent === "ppt_pdf_to_video" && (
+                  <p className="mt-2 text-[10px] opacity-75 italic leading-tight">
+                    ℹ️ Direct binary PPT/PDF document slide extraction is currently unavailable on the backend. Scene plan, slide sequence, and presenter narration will be structured from your deck configuration and prompt instructions.
+                  </p>
+                )}
+              </div>
+            )}
+
             {messages.map((msg) => {
               const isUser = msg.sender === "user";
 
@@ -2022,7 +2160,7 @@ export default function VideoAgentWorkspace({
               isLight ? "border-slate-200 bg-white" : "border-[#18233a] bg-[#0a0e19]"
             }`}
           >
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto sm:pr-14">
               {/* Presenter & Duration Selector Strip */}
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2 px-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -2429,11 +2567,13 @@ export default function VideoAgentWorkspace({
 
                 {/* Prompt Textarea */}
                 <textarea
+                  id="video-agent-composer-input"
+                  data-testid="video-agent-composer-input"
                   ref={composerInputRef}
                   value={composerText}
                   onChange={(e) => setComposerText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Enter your next prompt..."
+                  placeholder="Enter your prompt instructions..."
                   rows={1}
                   disabled={isGenerating}
                   className={`flex-1 bg-transparent text-xs sm:text-sm focus:outline-none resize-none py-1.5 max-h-24 scrollbar-none ${
@@ -2446,10 +2586,12 @@ export default function VideoAgentWorkspace({
                 {/* Send / Generate Button */}
                 <button
                   type="button"
+                  id="video-agent-generate-btn"
+                  data-testid="video-agent-generate-btn"
                   onClick={handleSendPrompt}
                   disabled={!composerText.trim() || isGenerating}
                   className="w-9 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white flex items-center justify-center shadow-md shadow-blue-500/25 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex-shrink-0 cursor-pointer"
-                  title="Send Prompt"
+                  title="Generate / Send Prompt"
                 >
                   {isGenerating ? (
                     <RefreshCw size={15} className="animate-spin" />

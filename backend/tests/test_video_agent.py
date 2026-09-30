@@ -87,3 +87,78 @@ async def test_video_agent_applies_brand_kit_colors(db_session, test_user, test_
     doc = ProjectDocumentV1.model_validate(initial_version.document)
     for scene in doc.scenes:
         assert scene.background.value == "#1E293B"
+
+
+@pytest.mark.asyncio
+async def test_video_agent_handles_ppt_pdf_workflow_context(db_session, test_user, test_workspace):
+    """Verify VideoAgent preserves PPT/PDF workflow intent, attachment, and metadata."""
+    service = VideoAgentService(db_session)
+    req = GenerateProjectRequest(
+        prompt="Create an executive presentation covering our new cloud product architecture.",
+        target_duration_seconds=40.0,
+        aspect_ratio="16:9",
+        workflow_intent="ppt_pdf_to_video",
+        workflow_label="PPT/PDF to Video",
+        workflow_metadata={
+            "documentName": "Q3_Product_Roadmap.pdf",
+            "slideCount": 8,
+            "layoutPreset": "Side-by-Side Presentation",
+            "presenter": "Annie (Studio Presenter)",
+        },
+        attachment={
+            "name": "Q3_Product_Roadmap.pdf",
+            "type": "pdf",
+            "slideCount": 8,
+            "status": "attached",
+        },
+    )
+
+    project, initial_version, _ = await service.generate_project(
+        workspace_id=test_workspace.id,
+        user_id=test_user.id,
+        request=req,
+    )
+
+    doc = ProjectDocumentV1.model_validate(initial_version.document)
+    meta = doc.metadata
+    assert meta["workflow_intent"] == "ppt_pdf_to_video"
+    assert meta["workflow_label"] == "PPT/PDF to Video"
+    assert meta["presentation_mode"] is True
+    assert "Direct binary PPT/PDF document slide extraction is currently unavailable" in meta["document_parsing_status"]
+    assert meta["attachment"]["name"] == "Q3_Product_Roadmap.pdf"
+    assert meta["workflow_metadata"]["slideCount"] == 8
+    assert meta["workflow_metadata"]["layoutPreset"] == "Side-by-Side Presentation"
+
+
+@pytest.mark.asyncio
+async def test_video_agent_handles_cinematic_shots_workflow_context(db_session, test_user, test_workspace):
+    """Verify VideoAgent handles Cinematic Shots workflow context, camera motion, and lighting."""
+    service = VideoAgentService(db_session)
+    req = GenerateProjectRequest(
+        prompt="Dramatic cinematic showdown between two rival founders at sunset.",
+        target_duration_seconds=30.0,
+        aspect_ratio="16:9",
+        workflow_intent="cinematic_shots",
+        workflow_label="Cinematic Shots",
+        workflow_metadata={
+            "shotType": "Over-the-Shoulder Dialogue Cut",
+            "cameraMotion": "Slow Push-In Dolly",
+            "lighting": "Golden Hour Cinematic 35mm",
+            "lens": "50mm Prime F/1.4",
+        },
+    )
+
+    project, initial_version, _ = await service.generate_project(
+        workspace_id=test_workspace.id,
+        user_id=test_user.id,
+        request=req,
+    )
+
+    doc = ProjectDocumentV1.model_validate(initial_version.document)
+    meta = doc.metadata
+    assert meta["workflow_intent"] == "cinematic_shots"
+    assert meta["workflow_label"] == "Cinematic Shots"
+    assert meta["cinematic_configuration"]["shotType"] == "Over-the-Shoulder Dialogue Cut"
+    assert meta["cinematic_configuration"]["lighting"] == "Golden Hour Cinematic 35mm"
+    assert doc.scenes[0].camera_motion in ("slow_zoom_in", "dolly_in", "presenter_medium")
+    assert "linear-gradient" in str(doc.scenes[0].background.gradient)

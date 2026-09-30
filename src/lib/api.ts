@@ -942,6 +942,10 @@ export const api = {
         auto_synthesize_speech?: boolean;
         provider?: string;
         device?: string;
+        workflow_intent?: string;
+        workflow_label?: string;
+        workflow_metadata?: Record<string, any>;
+        attachment?: Record<string, any>;
       }
     ) => {
       const cleanPayload: Record<string, any> = {
@@ -986,6 +990,18 @@ export const api = {
       }
       if (payload.device && payload.device.trim()) {
         cleanPayload.device = payload.device.trim();
+      }
+      if (payload.workflow_intent && payload.workflow_intent.trim()) {
+        cleanPayload.workflow_intent = payload.workflow_intent.trim();
+      }
+      if (payload.workflow_label && payload.workflow_label.trim()) {
+        cleanPayload.workflow_label = payload.workflow_label.trim();
+      }
+      if (payload.workflow_metadata && typeof payload.workflow_metadata === "object") {
+        cleanPayload.workflow_metadata = payload.workflow_metadata;
+      }
+      if (payload.attachment && typeof payload.attachment === "object") {
+        cleanPayload.attachment = payload.attachment;
       }
 
       return apiRequest<JobResponse | ProjectResponse>(
@@ -1144,7 +1160,7 @@ export const api = {
       let isClosed = false;
       const token = getStoredAccessToken();
       const q = token ? `?token=${encodeURIComponent(token)}` : "";
-      const url = `${getApiBaseUrl()}/api/v1/jobs/${jobId}/stream${q}`;
+      const url = `${API_BASE_URL}/api/v1/jobs/${jobId}/stream${q}`;
       const eventSource = new EventSource(url, { withCredentials: true });
 
       // Durable State Initial Sync: Query current job state immediately in case it completed before EventSource opened

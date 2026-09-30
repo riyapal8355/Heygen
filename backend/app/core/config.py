@@ -62,10 +62,6 @@ class Settings(BaseSettings):
         default="http://localhost:3000,http://127.0.0.1:3000",
         description="Allowed CORS origins as comma-separated string or list",
     )
-    FRONTEND_URL: Optional[str] = Field(
-        default=None,
-        description="Optional production frontend origin URL (e.g. Vercel deployment URL)",
-    )
 
     # AI Provider & Runtime Foundation Defaults
     AI_PROVIDER_MODE: str = Field(default="mock", description="AI Provider execution mode: mock or real")
@@ -137,20 +133,11 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> List[str]:
         """Return CORS origins normalized as a list of strings."""
-        origins: List[str] = []
         if isinstance(self.CORS_ORIGINS, list):
-            origins = [o.strip() for o in self.CORS_ORIGINS if o.strip()]
-        elif isinstance(self.CORS_ORIGINS, str):
-            origins = [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
-        else:
-            origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
-
-        if self.FRONTEND_URL and self.FRONTEND_URL.strip():
-            normalized_fe = self.FRONTEND_URL.strip().rstrip("/")
-            if normalized_fe not in origins:
-                origins.append(normalized_fe)
-
-        return origins if origins else ["http://localhost:3000", "http://127.0.0.1:3000"]
+            return self.CORS_ORIGINS
+        if isinstance(self.CORS_ORIGINS, str):
+            return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+        return ["http://localhost:3000"]
 
     @property
     def s3_endpoint_resolved(self) -> str:

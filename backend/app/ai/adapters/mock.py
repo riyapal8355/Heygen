@@ -78,6 +78,7 @@ class MockLLMProvider:
 
         ctx = context or {}
         target_dur = float(ctx.get("target_duration_seconds") or ctx.get("target_duration") or 30.0)
+        workflow_intent = ctx.get("workflow_intent")
 
         # Determine scene count scaling with duration
         req_scenes = ctx.get("target_scenes")
@@ -109,30 +110,53 @@ class MockLLMProvider:
         remainder = round(target_dur - sum(scene_durations), 2)
         scene_durations[-1] = round(scene_durations[-1] + remainder, 2)
 
-        headings_pool = [
-            "Introduction & Vision",
-            "Market Landscape & Core Problem",
-            "Key Technology Breakthrough",
-            "Next-Gen AI Avatars & Natural Presence",
-            "Expressive Speech & Multilingual Voices",
-            "Interactive Studio Canvas & Compositing",
-            "Enterprise Workflow Automation",
-            "Accelerated Production Turnaround",
-            "Customer Impact & Real-World Results",
-            "Creative Storytelling at Scale",
-            "Security, Governance & Brand Safety",
-            "Seamless Integrations & Cloud Rendering",
-            "Continuous Optimization & Analytics",
-            "Future-Proof Video Strategy",
-            "Summary & Strategic Takeaways",
-            "Get Started & Call to Action",
-        ]
+        if workflow_intent == "ppt_pdf_to_video":
+            headings_pool = [
+                "Slide 1: Executive Overview",
+                "Slide 2: Market Challenge & Context",
+                "Slide 3: Core Strategic Solution",
+                "Slide 4: Key Platform Architecture",
+                "Slide 5: Performance & Milestones",
+                "Slide 6: Financial & Growth Metrics",
+                "Slide 7: Execution Roadmap",
+                "Slide 8: Conclusion & Next Steps",
+            ]
+        elif workflow_intent == "cinematic_shots":
+            headings_pool = [
+                "Shot 1: Wide Establishing Atmosphere",
+                "Shot 2: Medium Tracking Follow",
+                "Shot 3: Dramatic Hero Composition",
+                "Shot 4: Over-the-Shoulder Dialogue Cut",
+                "Shot 5: Low-Angle Dynamic Shift",
+                "Shot 6: Cinematic Atmosphere & Grade",
+                "Shot 7: Tight Focus Expression",
+                "Shot 8: Cinematic Resolution & Outro",
+            ]
+        else:
+            headings_pool = [
+                "Introduction & Vision",
+                "Market Landscape & Core Problem",
+                "Key Technology Breakthrough",
+                "Next-Gen AI Avatars & Natural Presence",
+                "Expressive Speech & Multilingual Voices",
+                "Interactive Studio Canvas & Compositing",
+                "Enterprise Workflow Automation",
+                "Accelerated Production Turnaround",
+                "Customer Impact & Real-World Results",
+                "Creative Storytelling at Scale",
+                "Security, Governance & Brand Safety",
+                "Seamless Integrations & Cloud Rendering",
+                "Continuous Optimization & Analytics",
+                "Future-Proof Video Strategy",
+                "Summary & Strategic Takeaways",
+                "Get Started & Call to Action",
+            ]
 
         def get_scene_heading(i: int, total: int) -> str:
             if i == 0:
-                return "Introduction & Overview"
+                return headings_pool[0]
             if i == total - 1:
-                return "Call to Action & Getting Started"
+                return headings_pool[-1]
             idx_in_pool = (i - 1) % (len(headings_pool) - 2) + 1
             return headings_pool[idx_in_pool]
 
